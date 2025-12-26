@@ -79,7 +79,12 @@
     if (overlay) overlay.classList.remove("is-open");
   }
 
-  function bindNavClicks() {
+  let __navClicksBound = false;
+
+function bindNavClicks() {
+  if (__navClicksBound) return;
+  __navClicksBound = true;
+
   // ربط واحد فقط على document (event delegation)
   document.addEventListener("click", (e) => {
     const navBtn = e.target.closest(".nav-btn");
@@ -101,6 +106,7 @@
     }
   }, { passive: true });
 }
+
 
 
   function bindMobileToggle() {
