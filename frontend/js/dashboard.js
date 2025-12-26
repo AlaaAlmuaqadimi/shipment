@@ -18,11 +18,18 @@ function renderStatusPill(status) {
   return status || "-";
 }
 
+function renderBatchStatusPill(status) {
+  if (status === "open") return '<span class="status-pill status-pending">مفتوحة</span>';
+  if (status === "closed") return '<span class="status-pill status-done">مغلقة</span>';
+  return status || "-";
+}
+
 function renderDashboard() {
   const { orders, batches } = window.AppData;
 
   const totalOrders = orders.length;
   const pendingOrders = orders.filter(o => o.status === "pending").length;
+
   const deliveredOrders = orders.filter(o => o.status === "delivered");
   const totalProfit = deliveredOrders.reduce((s, o) => s + (o.profitLyd || 0), 0);
 
@@ -33,39 +40,54 @@ function renderDashboard() {
   if (b) b.textContent = pendingOrders;
   if (c) c.textContent = formatMoney(totalProfit);
 
+  // ===== Latest Orders =====
   const latestBody = document.getElementById("dashboard-latest-orders");
   if (latestBody) {
     latestBody.innerHTML = "";
-    orders.slice(-5).reverse().forEach(o => {
+
+    const latest = orders.slice(-5).reverse();
+    if (!latest.length) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${o.product || "-"}</td>
-        <td>${o.customer || "-"}</td>
-        <td>${formatMoney(o.profitLyd || 0)}</td>
-        <td>${renderStatusPill(o.status)}</td>
-      `;
+      tr.innerHTML = `<td colspan="4" class="muted">لا توجد طلبات بعد.</td>`;
       latestBody.appendChild(tr);
-    });
+    } else {
+      latest.forEach(o => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td data-label="المنتج">${o.product || "-"}</td>
+          <td data-label="المستلم">${o.customer || "-"}</td>
+          <td data-label="الربح (د.ل)">${formatMoney(o.profitLyd || 0)}</td>
+          <td data-label="الحالة">${renderStatusPill(o.status)}</td>
+        `;
+        latestBody.appendChild(tr);
+      });
+    }
   }
 
+  // ===== Batches Summary =====
   const batchesBody = document.getElementById("dashboard-batches");
   if (batchesBody) {
     batchesBody.innerHTML = "";
-    batches.forEach(x => {
+
+    if (!batches.length) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${x.id}</td>
-        <td>${x.ordersCount || 0}</td>
-        <td>${formatMoney(x.totalProfit || 0)}</td>
-        <td>${x.status === "open"
-            ? '<span class="status-pill status-pending">مفتوحة</span>'
-            : '<span class="status-pill status-done">مغلقة</span>'
-          }</td>
-      `;
+      tr.innerHTML = `<td colspan="4" class="muted">لا توجد شحنات بعد.</td>`;
       batchesBody.appendChild(tr);
-    });
+    } else {
+      batches.forEach(x => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td data-label="رقم الشحنة">${x.id || "-"}</td>
+          <td data-label="عدد الطلبيات">${x.ordersCount || 0}</td>
+          <td data-label="ربح الشحنة">${formatMoney(x.totalProfit || 0)}</td>
+          <td data-label="الحالة">${renderBatchStatusPill(x.status)}</td>
+        `;
+        batchesBody.appendChild(tr);
+      });
+    }
   }
 
+  // زر إضافة طلب
   const goAdd = document.getElementById("goAddOrder");
   if (goAdd) {
     goAdd.onclick = () => (location.hash = "#orders");
@@ -74,4 +96,11 @@ function renderDashboard() {
 
 window.addEventListener("page:loaded", (e) => {
   if (e.detail.route === "dashboard") renderDashboard();
+});
+
+// تحديث الداشبورد عند تغير البيانات (طلبات/شحنات)
+window.addEventListener("data:changed", () => {
+  // لو المستخدم واقف على الداشبورد، حدّث فوراً
+  const hash = (location.hash || "#dashboard").replace("#", "");
+  if (hash === "dashboard") renderDashboard();
 });

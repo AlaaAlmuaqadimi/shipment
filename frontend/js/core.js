@@ -1,111 +1,195 @@
-// =============================
-// QS System - core.js
-// =============================
+"use strict";
 
-// ========= GLOBAL EXCHANGE RATE =========
-let exchangeRate = 7.0;
+/*
+  =============================
+  Core Router + Loader (Safe)
+  =============================
+  - لا يعتمد على nav.html إطلاقاً
+  - يحمّل:
+      components/header.html -> #header-slot
+      components/modals.html -> #modals-slot
+  - يحمّل الصفحات:
+      pages/<route>.html -> #app-content
+  - يطلق event:
+      window.dispatchEvent(new CustomEvent("page:loaded",{detail:{route}}))
+*/
 
-// ========= OPTIONS =========
-const ENABLE_BLOCKED_CHECK = false;
+(function () {
+  const ROUTES = {
+    dashboard: "dashboard.html",
+    orders: "orders.html",
+    batches: "batches.html",
+    analytics: "analytics.html",
+    blocked: "blocked.html",
+    settings: "settings.html",
+    users: "users.html"
+  };
 
-// ========= LOCAL STORAGE KEYS =========
-const LS_KEYS = {
-  batches: "qs_batches_v2" // رفعت النسخة عشان ما تلخبط مع القديم
-};
+  const DEFAULT_ROUTE = "dashboard";
 
-// ========= HELPERS =========
-function formatMoney(v) {
-  return (Number(v) || 0).toFixed(2) + " د.ل";
-}
-
-function safeText(v) {
-  return (v === null || v === undefined || v === "") ? "-" : String(v);
-}
-
-function renderStatusPill(status) {
-  if (status === "pending") return '<span class="status-pill status-pending">معلقة</span>';
-  if (status === "delivered") return '<span class="status-pill status-done">مستلمة</span>';
-  if (status === "cancelled") return '<span class="status-pill status-cancelled">ملغاة</span>';
-  return status;
-}
-
-function renderBatchStatusPill(status) {
-  if (status === "open") return '<span class="status-pill status-pending">مفتوحة</span>';
-  if (status === "closed") return '<span class="status-pill status-done">مغلقة</span>';
-  return status;
-}
-
-function normalizePhone(p) {
-  return String(p || "").replace(/\s+/g, "").trim();
-}
-
-// ========= LOADERS =========
-async function loadHTML(path) {
-  const res = await fetch(path);
-  if (!res.ok) throw new Error("Failed to load: " + path);
-  return await res.text();
-}
-
-async function mountComponent(slotId, path) {
-  const slot = document.getElementById(slotId);
-  if (!slot) throw new Error("Missing slot: #" + slotId);
-  slot.innerHTML = await loadHTML(path);
-}
-
-async function mountPage(containerId, path) {
-  const container = document.getElementById(containerId);
-  if (!container) throw new Error("Missing container: #" + containerId);
-  const html = await loadHTML(path);
-  container.insertAdjacentHTML("beforeend", html);
-}
-
-// ========= NAV =========
-let navButtons = [];
-
-function openPage(pageId) {
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  const pageEl = document.getElementById(pageId);
-  if (pageEl) pageEl.classList.add("active");
-
-  navButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.page === pageId));
-}
-
-function wireNav() {
-  navButtons = Array.from(document.querySelectorAll(".nav-btn"));
-  navButtons.forEach(btn => btn.addEventListener("click", () => openPage(btn.dataset.page)));
-}
-
-// ========= BOOTSTRAP =========
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    await mountComponent("header-slot", "components/header.html"); 
-    await mountComponent("modals-slot", "components/modals.html");
-
-    await mountPage("app-content", "pages/dashboard.html");
-    await mountPage("app-content", "pages/orders.html");
-    await mountPage("app-content", "pages/batches.html");
-    await mountPage("app-content", "pages/analytics.html");
-    await mountPage("app-content", "pages/blocked.html");
-    await mountPage("app-content", "pages/settings.html");
-    await mountPage("app-content", "pages/users.html");
-
-    wireNav();
-    openPage("dashboard");
-
-    // ✅ بعد ما الصفحات تتحقن في DOM شغّل init()
-    if (typeof init === "function") init();
-
-  } catch (e) {
-    console.error(e);
-    document.body.innerHTML =
-      "<pre style='direction:ltr; padding:16px; color:#fff; background:#111;'>" +
-      String(e.stack || e) +
-      "</pre>";
+  function $(sel, root = document) {
+    return root.querySelector(sel);
   }
-});
 
-wireNav();
-openPage("dashboard");
+  async function fetchText(url) {
+    const res = await fetch(url, { cache: "no-cache" });
+    if (!res.ok) throw new Error(`Fetch failed ${res.status}: ${url}`);
+    return await res.text();
+  }
 
-// ✅ بعد ما الصفحات تتحقن في DOM شغّل init()
-if (typeof init === "function") init();
+  async function loadInto(slotId, url) {
+    const slot = document.getElementById(slotId);
+    if (!slot) return;
+
+    try {
+      const html = await fetchText(url);
+      slot.innerHTML = html;
+    } catch (err) {
+      console.error(err);
+      slot.innerHTML = `
+        <div class="card">
+          <div class="card-title">خطأ في تحميل الملف</div>
+          <div class="muted">${url}</div>
+        </div>
+      `;
+    }
+  }
+
+  function normalizeRouteFromHash() {
+    let h = (location.hash || "").replace("#", "").trim();
+    if (!h) return DEFAULT_ROUTE;
+    if (h.startsWith("/")) h = h.slice(1);
+    if (!ROUTES[h]) return "404";
+    return h;
+  }
+
+  function setActiveNav(route) {
+    // يدعم data-route أو data-page (لو موجود عندك)
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      const r = btn.getAttribute("data-route") || btn.getAttribute("data-page");
+      if (!r) return;
+      btn.classList.toggle("active", r === route);
+    });
+  }
+
+  function closeMobileNavIfOpen() {
+    const tabs = document.getElementById("navTabs") || document.querySelector(".nav-tabs");
+    const overlay = document.getElementById("navOverlay") || document.querySelector(".nav-overlay");
+    if (tabs) tabs.classList.remove("is-open");
+    if (overlay) overlay.classList.remove("is-open");
+  }
+
+  function bindNavClicks() {
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const r = btn.getAttribute("data-route") || btn.getAttribute("data-page");
+        if (!r) return;
+        location.hash = `#${r}`;
+        closeMobileNavIfOpen();
+      });
+    });
+
+    // أزرار الـ sidebar (data-route)
+    document.querySelectorAll("[data-route].sidebar-btn, .sidebar-btn[data-route]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const r = btn.getAttribute("data-route");
+        if (!r) return;
+        location.hash = `#${r}`;
+        closeMobileNavIfOpen();
+      });
+    });
+  }
+
+  function bindMobileToggle() {
+    const toggle = document.getElementById("navToggle");
+    const tabs = document.getElementById("navTabs") || document.querySelector(".nav-tabs");
+    const overlay = document.getElementById("navOverlay") || document.querySelector(".nav-overlay");
+
+    if (!toggle || !tabs) return;
+
+    toggle.addEventListener("click", () => {
+      const open = tabs.classList.toggle("is-open");
+      if (overlay) overlay.classList.toggle("is-open", open);
+    });
+
+    if (overlay) {
+      overlay.addEventListener("click", () => {
+        closeMobileNavIfOpen();
+      });
+    }
+  }
+
+  async function renderRoute() {
+    const route = normalizeRouteFromHash();
+    const app = document.getElementById("app-content");
+    if (!app) return;
+
+    if (route === "404") {
+      try {
+        app.innerHTML = await fetchText("pages/404.html");
+      } catch {
+        app.innerHTML = `<div class="card"><div class="card-title">404</div><div class="muted">الصفحة غير موجودة</div></div>`;
+      }
+      setActiveNav(""); // لا تفعيل
+      window.dispatchEvent(new CustomEvent("page:loaded", { detail: { route: "404" } }));
+      return;
+    }
+
+    const pageFile = ROUTES[route];
+
+    try {
+      app.innerHTML = await fetchText(`pages/${pageFile}`);
+    } catch (err) {
+      console.error(err);
+      app.innerHTML = `
+        <div class="card">
+          <div class="card-title">تعذر تحميل الصفحة</div>
+          <div class="muted">pages/${pageFile}</div>
+        </div>
+      `;
+    }
+
+    // بعد ما تنحقن الصفحة: فعل الـ nav وأعد الربط
+    setActiveNav(route);
+    bindNavClicks();
+
+    // أبلغ بقية الموديولات
+    window.dispatchEvent(new CustomEvent("page:loaded", { detail: { route } }));
+  }
+
+  async function boot() {
+    // حمّل الهيدر + المودالز
+    await loadInto("header-slot", "components/header.html");
+    await loadInto("modals-slot", "components/modals.html");
+
+    // لو ما عندك overlay في header.html أنشئه تلقائياً (اختياري)
+    if (!document.getElementById("navOverlay")) {
+      const div = document.createElement("div");
+      div.id = "navOverlay";
+      div.className = "nav-overlay";
+      document.body.appendChild(div);
+    }
+
+    // ربط nav + toggle
+    bindNavClicks();
+    bindMobileToggle();
+
+    // لو ما فيش هاش: روح داشبورد
+    if (!location.hash || location.hash === "#") {
+      location.hash = `#${DEFAULT_ROUTE}`;
+      return; // سيعاد استدعاء renderRoute عبر hashchange
+    }
+
+    await renderRoute();
+  }
+
+  window.addEventListener("hashchange", renderRoute);
+  window.addEventListener("DOMContentLoaded", boot);
+
+  // إتاحة بسيطة (لو احتجتها)
+  window.AppCore = {
+    renderRoute,
+    setActiveNav,
+    closeMobileNavIfOpen
+  };
+})();

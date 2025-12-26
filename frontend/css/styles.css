@@ -38,12 +38,14 @@
 
   /* ========= TYPO ========= */
   --font-family-main: "Tajawal", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --text-xs: 0.75rem;
-  --text-sm: 0.8rem;
-  --text-md: 0.9rem;
-  --text-lg: 1rem;
-  --text-xl: 1.2rem;
-  --text-2xl: 1.4rem;
+
+  /* ✅ تكبير خطوط أساسياً */
+  --text-xs: 0.82rem;
+  --text-sm: 0.92rem;
+  --text-md: 1.02rem;
+  --text-lg: 1.12rem;
+  --text-xl: 1.3rem;
+  --text-2xl: 1.55rem;
 
   /* ========= RADII ========= */
   --radius-pill: 999px;
@@ -65,24 +67,41 @@
   font-family: var(--font-family-main);
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   background: radial-gradient(circle at top left, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
   color: var(--color-text-main);
 }
 
+/* ✅ تحسين عرض المحتوى على الموبايل */
 .app-shell {
   max-width: 1280px;
   margin: 20px auto;
   padding: 0 16px 32px;
 }
 
+/* =========================
+   Header / Top Header
+   ========================= */
 header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
   gap: 16px;
+}
+
+.top-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .logo {
@@ -115,20 +134,30 @@ header {
   color: var(--color-text-muted);
 }
 
+/* =========================
+   Nav Tabs (Desktop)
+   ========================= */
 .nav-tabs {
   display: flex;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.7);
-  padding: 4px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 6px;
   border-radius: var(--radius-pill);
   box-shadow: var(--shadow-tab);
-  backdrop-filter: blur(8px);
-  overflow-x: auto; /* ✅ مهم للموبايل */
+  backdrop-filter: blur(10px); 
+}
+
+.nav-tabs::-webkit-scrollbar {
+  height: 8px;
+}
+.nav-tabs::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
 }
 
 .nav-btn {
   border: none;
-  padding: 8px 16px;
+  padding: 10px 16px;
   border-radius: var(--radius-pill);
   background: transparent;
   font-size: var(--text-md);
@@ -139,6 +168,7 @@ header {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+  scroll-snap-align: start;
 }
 
 .nav-btn span.icon {
@@ -151,17 +181,113 @@ header {
   box-shadow: 0 8px 22px rgba(56, 189, 248, 0.5);
 }
 
+/* =========================
+   Mobile Nav Toggle
+   ========================= */
+
+/* زر التوجل */
+.nav-toggle {
+  display: none;
+  border: none;
+  background: white;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 1.4rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+
+/* Overlay خلف القائمة */
+.nav-overlay {
+  display: none;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 980px) {
+
+  /* اظهار زر التوجل */
+  .nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  /* إخفاء شريط التنقل افتراضيًا */
+  .nav-tabs {
+    position: fixed;
+    top: 88px;
+    right: 12px;
+    left: 12px;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 12px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    box-shadow: var(--shadow-tab);
+    z-index: 1001;
+
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+
+  /* عند الفتح */
+  .nav-tabs.is-open {
+    display: flex;
+    animation: navFadeIn 0.25s ease;
+  }
+
+  /* الأزرار داخل القائمة */
+  .nav-tabs .nav-btn {
+    justify-content: flex-start;
+    padding: 12px 14px;
+    font-size: var(--text-md);
+    width: 100%;
+  }
+
+  /* Overlay خلف القائمة */
+  .nav-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.35);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
+  }
+
+  .nav-overlay.is-open {
+    display: block;
+  }
+}
+
+/* حركة بسيطة */
+@keyframes navFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 main {
   margin-top: 10px;
 }
 
+/* =========================
+   IMPORTANT FIX:
+   injected pages may contain .page which is hidden by default
+   ========================= */
 .page {
   display: none;
   animation: fadeIn var(--transition-med);
 }
-
 .page.active {
   display: block;
+}
+
+/* ✅ لو الصفحة محقونة داخل app-content: لا تخفيها */
+#app-content .page,
+#app-content .page.active{
+  display: block !important;
 }
 
 @keyframes fadeIn {
@@ -178,8 +304,9 @@ main {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
+/* ✅ كانت تضغط الكروت على الموبايل */
 .grid-3 {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
 .card {
@@ -199,7 +326,7 @@ main {
 }
 
 .card-title {
-  font-weight: 600;
+  font-weight: 700;
   font-size: var(--text-lg);
 }
 
@@ -209,7 +336,7 @@ main {
 }
 
 .stat-card {
-  padding: 14px 16px;
+  padding: 16px 16px;
   border-radius: var(--radius-md);
   background: var(--color-primary-soft);
   border: 1px solid rgba(56, 189, 248, 0.5);
@@ -223,23 +350,23 @@ main {
 .stat-value {
   margin-top: 6px;
   font-size: var(--text-2xl);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .stat-chip {
-  margin-top: 4px;
+  margin-top: 6px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   border-radius: var(--radius-pill);
-  padding: 2px 8px;
+  padding: 4px 10px;
   font-size: var(--text-xs);
   background: var(--color-accent-soft);
   color: var(--color-warning-text);
 }
 
 .badge-soft {
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: var(--radius-pill);
   font-size: var(--text-xs);
   background: var(--color-chip-bg);
@@ -249,10 +376,10 @@ main {
 .primary-btn {
   border: none;
   border-radius: var(--radius-pill);
-  padding: 10px 20px;
+  padding: 12px 18px;
   background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
   color: white;
-  font-weight: 600;
+  font-weight: 700;
   font-size: var(--text-md);
   cursor: pointer;
   box-shadow: var(--shadow-strong);
@@ -275,7 +402,7 @@ main {
 .secondary-btn {
   border-radius: var(--radius-pill);
   border: 1px solid var(--color-border);
-  padding: 8px 16px;
+  padding: 10px 14px;
   font-size: var(--text-sm);
   background: white;
   cursor: pointer;
@@ -285,20 +412,30 @@ main {
   gap: 4px;
 }
 
+/* ✅ Tables: wrapper scroll on mobile */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
   font-size: var(--text-sm);
+  min-width: 720px;
 }
 
 th, td {
-  padding: 8px 10px;
+  padding: 10px 10px;
   text-align: right;
   border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
 }
 
 th {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--color-text-muted);
 }
 
@@ -307,7 +444,7 @@ tr:last-child td {
 }
 
 .status-pill {
-  padding: 3px 10px;
+  padding: 5px 12px;
   border-radius: var(--radius-pill);
   font-size: var(--text-xs);
   display: inline-flex;
@@ -331,7 +468,7 @@ tr:last-child td {
 }
 
 .invoice-chip {
-  padding: 3px 8px;
+  padding: 4px 10px;
   border-radius: var(--radius-pill);
   background: var(--color-invoice-bg);
   color: var(--color-invoice-text);
@@ -348,14 +485,15 @@ tr:last-child td {
 
 .table-actions {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 .icon-btn {
   border-radius: var(--radius-pill);
   border: 1px solid var(--color-border);
-  padding: 4px 8px;
+  padding: 6px 10px;
   background: white;
   cursor: pointer;
   font-size: var(--text-xs);
@@ -379,19 +517,19 @@ tr:last-child td {
 }
 
 .search-input {
-  max-width: 220px;
+  max-width: 280px;
   position: relative;
   width: 100%;
 }
 
 .search-input input {
   width: 100%;
-  padding-inline-start: 30px;
+  padding-inline-start: 36px;
 }
 
 .search-input span {
   position: absolute;
-  left: 10px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
   font-size: var(--text-sm);
@@ -400,13 +538,13 @@ tr:last-child td {
 
 .filter-chips {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .chip {
   border-radius: var(--radius-pill);
-  padding: 4px 10px;
+  padding: 6px 12px;
   border: 1px solid var(--color-border);
   background: white;
   font-size: var(--text-xs);
@@ -424,7 +562,7 @@ tr:last-child td {
   margin-bottom: 10px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 label {
@@ -435,11 +573,15 @@ label {
 input, select, textarea {
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-  padding: 8px 10px;
+  padding: 10px 12px;
   font-size: var(--text-sm);
   outline: none;
   background: var(--color-bg-alt);
   transition: var(--transition-fast);
+}
+
+textarea {
+  resize: vertical;
 }
 
 input:focus, select:focus, textarea:focus {
@@ -451,7 +593,7 @@ input:focus, select:focus, textarea:focus {
 .two-cols {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .section-title-inline {
@@ -460,18 +602,19 @@ input:focus, select:focus, textarea:focus {
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 6px;
+  flex-wrap: wrap;
 }
 
 .pill-small {
   font-size: var(--text-xs);
-  padding: 2px 6px;
+  padding: 4px 10px;
   border-radius: var(--radius-pill);
   background: var(--color-primary-soft);
   color: var(--color-text-main);
 }
 
 .highlight-profit {
-  font-weight: 700;
+  font-weight: 800;
   color: var(--color-success-text);
   font-size: var(--text-lg);
 }
@@ -518,7 +661,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .modal-title {
-  font-weight: 700;
+  font-weight: 800;
   font-size: var(--text-lg);
 }
 
@@ -539,21 +682,10 @@ input:focus, select:focus, textarea:focus {
   border-top: 1px solid var(--color-border);
 }
 
-@media (max-width: 768px) {
-  header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .nav-tabs {
-    width: 100%;
-    justify-content: space-between;
-  }
-}
-
 /* Optional: make costs stand out a bit */
 .cost-negative {
   color: var(--color-danger-text);
-  font-weight: 700;
+  font-weight: 800;
 }
 
 /* Layout wrapper for split sidebar/main */
@@ -575,30 +707,222 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 10px 26px rgba(15,23,42,0.08);
   margin-bottom: 12px;
 }
-.sidebar-title{ font-weight: 700; margin-bottom: 10px; }
+.sidebar-title{ font-weight: 800; margin-bottom: 10px; }
 .sidebar-btn{
   width: 100%;
   margin-bottom: 8px;
   border-radius: 999px;
   border: 1px solid #e5e7eb;
-  padding: 8px 12px;
+  padding: 10px 12px;
   background: #fff;
   cursor: pointer;
   text-align: right;
+  font-size: var(--text-sm);
 }
 .sidebar-btn:hover{ filter: brightness(0.98); }
 
-.top-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
 .spacer-16{ height: 16px; }
 
+/* =========================
+   ✅ MOBILE IMPROVEMENTS
+   ========================= */
 @media (max-width: 980px){
   .layout{ grid-template-columns: 1fr; }
   .sidebar{ position: static; }
+}
+
+/* ✅ موبايل: الهيدر وnav والكروت بشكل أجمل */
+@media (max-width: 768px) {
+
+  .app-shell {
+    margin: 12px auto;
+    padding: 0 12px 22px;
+  }
+
+  header,
+  .top-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .logo-badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 16px;
+    font-size: var(--text-lg);
+  }
+
+  .logo-text-title {
+    font-size: 1.2rem;
+    line-height: 1.35;
+  }
+
+  .logo-text-sub {
+    font-size: var(--text-sm);
+  }
+
+  /* ✅ الكروت: خليه صف واحد */
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    padding: 14px 14px;
+    border-radius: 18px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .primary-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 16px;
+  }
+
+  .secondary-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .search-input {
+    max-width: 100%;
+  }
+
+  /* ✅ الجداول: لا تصغر، خلّيها scroll */
+  table {
+    min-width: 780px;
+  }
+
+  th, td {
+    padding: 10px 10px;
+    font-size: var(--text-sm);
+  }
+}
+
+/* ✅ موبايل صغير جدًا */
+@media (max-width: 420px) {
+  .logo-text-title { font-size: 1.1rem; }
+  .stat-value { font-size: 1.45rem; }
+}
+
+/* =========================
+   ✅ MOBILE: Tables -> Cards
+   ========================= */
+@media (max-width: 560px) {
+
+  .card table {
+    width: 100%;
+    min-width: 0 !important;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+  }
+
+  .card table thead {
+    display: none !important;
+  }
+
+  .card table tbody,
+  .card table tr,
+  .card table td {
+    display: block;
+    width: 100%;
+  }
+
+  .card table tr {
+    background: rgba(255,255,255,0.95);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+    padding: 10px 10px;
+  }
+
+  .card table td {
+    border: none !important;
+    padding: 8px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    text-align: right;
+  }
+
+  .card table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    flex: 0 0 auto;
+    max-width: 48%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card table td:last-child {
+    padding-top: 10px;
+  }
+
+  .table-actions {
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .icon-btn {
+    padding: 8px 10px !important;
+    font-size: var(--text-xs) !important;
+  }
+
+  .two-cols {
+    grid-template-columns: 1fr !important;
+  }
+}
+/* =========================
+   ✅ MOBILE TABLE SCROLL (Keep as Table)
+   ========================= */
+
+.table-wrap{
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
+/* شريط تمرير ناعم */
+.table-wrap::-webkit-scrollbar{ height: 10px; }
+.table-wrap::-webkit-scrollbar-thumb{
+  background: rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
+}
+
+.table-wrap table{
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px; /* مهم: يخلي الجدول أعرض من الهاتف فتظهر إمكانية السحب */
+}
+
+/* موبايل: خفف المسافات شوي */
+@media (max-width: 768px){
+  th, td{
+    padding: 10px 10px;
+    font-size: var(--text-sm);
+    white-space: nowrap; /* مهم: يمنع تكسير النص داخل الخلايا */
+  }
+}
+
+/* موبايل صغير جدًا */
+@media (max-width: 420px){
+  th, td{
+    padding: 9px 9px;
+    font-size: var(--text-xs);
+  }
 }
