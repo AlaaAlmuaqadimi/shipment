@@ -80,25 +80,28 @@
   }
 
   function bindNavClicks() {
-    document.querySelectorAll(".nav-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const r = btn.getAttribute("data-route") || btn.getAttribute("data-page");
-        if (!r) return;
-        location.hash = `#${r}`;
-        closeMobileNavIfOpen();
-      });
-    });
+  // ربط واحد فقط على document (event delegation)
+  document.addEventListener("click", (e) => {
+    const navBtn = e.target.closest(".nav-btn");
+    if (navBtn) {
+      const r = navBtn.getAttribute("data-route") || navBtn.getAttribute("data-page");
+      if (!r) return;
+      location.hash = `#${r}`;
+      closeMobileNavIfOpen();
+      return;
+    }
 
-    // أزرار الـ sidebar (data-route)
-    document.querySelectorAll("[data-route].sidebar-btn, .sidebar-btn[data-route]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const r = btn.getAttribute("data-route");
-        if (!r) return;
-        location.hash = `#${r}`;
-        closeMobileNavIfOpen();
-      });
-    });
-  }
+    const sideBtn = e.target.closest(".sidebar-btn[data-route]");
+    if (sideBtn) {
+      const r = sideBtn.getAttribute("data-route");
+      if (!r) return;
+      location.hash = `#${r}`;
+      closeMobileNavIfOpen();
+      return;
+    }
+  }, { passive: true });
+}
+
 
   function bindMobileToggle() {
     const toggle = document.getElementById("navToggle");
@@ -150,8 +153,7 @@
     }
 
     // بعد ما تنحقن الصفحة: فعل الـ nav وأعد الربط
-    setActiveNav(route);
-    bindNavClicks();
+    setActiveNav(route); 
 
     // أبلغ بقية الموديولات
     window.dispatchEvent(new CustomEvent("page:loaded", { detail: { route } }));
@@ -169,10 +171,10 @@
       div.className = "nav-overlay";
       document.body.appendChild(div);
     }
-
-    // ربط nav + toggle
+ 
     bindNavClicks();
     bindMobileToggle();
+
 
     // لو ما فيش هاش: روح داشبورد
     if (!location.hash || location.hash === "#") {
