@@ -39,11 +39,73 @@ function normalizePhone(p) {
   return String(p || "").replace(/\s+/g, "").trim();
 }
 
+// ========= LOADERS =========
+async function loadHTML(path) {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error("Failed to load: " + path);
+  return await res.text();
+}
+
+async function mountComponent(slotId, path) {
+  const slot = document.getElementById(slotId);
+  if (!slot) throw new Error("Missing slot: #" + slotId);
+  slot.innerHTML = await loadHTML(path);
+}
+
+async function mountPage(containerId, path) {
+  const container = document.getElementById(containerId);
+  if (!container) throw new Error("Missing container: #" + containerId);
+  const html = await loadHTML(path);
+  container.insertAdjacentHTML("beforeend", html);
+}
+
 // ========= NAV =========
-const navButtons = document.querySelectorAll(".nav-btn");
+let navButtons = [];
+
 function openPage(pageId) {
   document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.getElementById(pageId).classList.add("active");
+  const pageEl = document.getElementById(pageId);
+  if (pageEl) pageEl.classList.add("active");
+
   navButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.page === pageId));
 }
-navButtons.forEach(btn => btn.addEventListener("click", () => openPage(btn.dataset.page)));
+
+function wireNav() {
+  navButtons = Array.from(document.querySelectorAll(".nav-btn"));
+  navButtons.forEach(btn => btn.addEventListener("click", () => openPage(btn.dataset.page)));
+}
+
+// ========= BOOTSTRAP =========
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    await mountComponent("header-slot", "components/header.html"); 
+    await mountComponent("modals-slot", "components/modals.html");
+
+    await mountPage("app-content", "pages/dashboard.html");
+    await mountPage("app-content", "pages/orders.html");
+    await mountPage("app-content", "pages/batches.html");
+    await mountPage("app-content", "pages/analytics.html");
+    await mountPage("app-content", "pages/blocked.html");
+    await mountPage("app-content", "pages/settings.html");
+    await mountPage("app-content", "pages/users.html");
+
+    wireNav();
+    openPage("dashboard");
+
+    // ✅ بعد ما الصفحات تتحقن في DOM شغّل init()
+    if (typeof init === "function") init();
+
+  } catch (e) {
+    console.error(e);
+    document.body.innerHTML =
+      "<pre style='direction:ltr; padding:16px; color:#fff; background:#111;'>" +
+      String(e.stack || e) +
+      "</pre>";
+  }
+});
+
+wireNav();
+openPage("dashboard");
+
+// ✅ بعد ما الصفحات تتحقن في DOM شغّل init()
+if (typeof init === "function") init();

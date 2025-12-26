@@ -149,22 +149,43 @@ function deleteOrder(id) {
 function scrollToAddOrder() {
   document.getElementById("add-order-card").scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
 // ========= AUTO CALCULATION =========
-const gbpBuyInput = document.getElementById("gbp-buy-input");
-const gbpSellInput = document.getElementById("gbp-sell-input");
+let gbpBuyInput = null;
+let gbpSellInput = null;
 
-const costLyd1Input = document.getElementById("cost-lyd-1");
-const sellLyd1Input = document.getElementById("sell-lyd-1");
-const profitGbp1Input = document.getElementById("profit-gbp-1");
-const profitLyd1Input = document.getElementById("profit-lyd-1");
+let costLyd1Input = null;
+let sellLyd1Input = null;
+let profitGbp1Input = null;
+let profitLyd1Input = null;
 
-const costLyd2Input = document.getElementById("cost-lyd-2");
-const sellLyd2Input = document.getElementById("sell-lyd-2");
-const profitGbp2Input = document.getElementById("profit-gbp-2");
-const profitLyd2Input = document.getElementById("profit-lyd-2");
+let costLyd2Input = null;
+let sellLyd2Input = null;
+let profitGbp2Input = null;
+let profitLyd2Input = null;
+
+function bindOrderFormElements() {
+  gbpBuyInput = document.getElementById("gbp-buy-input");
+  gbpSellInput = document.getElementById("gbp-sell-input");
+
+  costLyd1Input = document.getElementById("cost-lyd-1");
+  sellLyd1Input = document.getElementById("sell-lyd-1");
+  profitGbp1Input = document.getElementById("profit-gbp-1");
+  profitLyd1Input = document.getElementById("profit-lyd-1");
+
+  costLyd2Input = document.getElementById("cost-lyd-2");
+  sellLyd2Input = document.getElementById("sell-lyd-2");
+  profitGbp2Input = document.getElementById("profit-gbp-2");
+  profitLyd2Input = document.getElementById("profit-lyd-2");
+
+  // اربط الأحداث فقط إذا العناصر موجودة
+  if (gbpBuyInput) gbpBuyInput.addEventListener("input", recalcOrderTotals);
+  if (gbpSellInput) gbpSellInput.addEventListener("input", recalcOrderTotals);
+}
 
 function recalcOrderTotals() {
+  // حماية من null
+  if (!gbpBuyInput || !gbpSellInput) return;
+
   const gbpBuy = parseFloat(gbpBuyInput.value) || 0;
   const gbpSell = parseFloat(gbpSellInput.value) || 0;
 
@@ -173,41 +194,27 @@ function recalcOrderTotals() {
   const pGbp = gbpSell - gbpBuy;
   const pLyd = sell - cost;
 
-  costLyd1Input.value = cost ? cost.toFixed(2) + " د.ل" : "";
-  sellLyd1Input.value = sell ? sell.toFixed(2) + " د.ل" : "";
-  profitGbp1Input.value = pGbp ? pGbp.toFixed(2) : "";
-  profitLyd1Input.value = pLyd ? pLyd.toFixed(2) + " د.ل" : "";
+  if (costLyd1Input) costLyd1Input.value = cost ? cost.toFixed(2) + " د.ل" : "";
+  if (sellLyd1Input) sellLyd1Input.value = sell ? sell.toFixed(2) + " د.ل" : "";
+  if (profitGbp1Input) profitGbp1Input.value = pGbp ? pGbp.toFixed(2) : "";
+  if (profitLyd1Input) profitLyd1Input.value = pLyd ? pLyd.toFixed(2) + " د.ل" : "";
 
-  costLyd2Input.value = cost ? cost.toFixed(2) + " د.ل" : "";
-  sellLyd2Input.value = sell ? sell.toFixed(2) + " د.ل" : "";
-  profitGbp2Input.value = pGbp ? pGbp.toFixed(2) : "";
-  profitLyd2Input.value = pLyd ? pLyd.toFixed(2) + " د.ل" : "";
+  if (costLyd2Input) costLyd2Input.value = cost ? cost.toFixed(2) + " د.ل" : "";
+  if (sellLyd2Input) sellLyd2Input.value = sell ? sell.toFixed(2) + " د.ل" : "";
+  if (profitGbp2Input) profitGbp2Input.value = pGbp ? pGbp.toFixed(2) : "";
+  if (profitLyd2Input) profitLyd2Input.value = pLyd ? pLyd.toFixed(2) + " د.ل" : "";
 }
-
-[gbpBuyInput, gbpSellInput].forEach(el => el.addEventListener("input", recalcOrderTotals));
 
 function resetOrderForm() {
   document.getElementById("product-name-input").value = "";
-  gbpBuyInput.value = "";
-  gbpSellInput.value = "";
+  if (gbpBuyInput) gbpBuyInput.value = "";
+  if (gbpSellInput) gbpSellInput.value = "";
   document.getElementById("customer-name-input").value = "";
   document.getElementById("phone-input").value = "";
   document.getElementById("address-input").value = "";
   document.getElementById("delegate-input").value = "";
   document.getElementById("batch-select").value = "";
   recalcOrderTotals();
-}
-
-function isCustomerBlocked(name, phone) {
-  const n = (name || "").trim().toLowerCase();
-  const p = normalizePhone(phone);
-
-  return blockedCustomers.some(b => {
-    if (!b.isBlocked) return false;
-    const bn = (b.name || "").trim().toLowerCase();
-    const bp = normalizePhone(b.phone);
-    return (bp && p && bp === p) || (bn && n && bn === n);
-  });
 }
 
 function saveOrder() {
@@ -226,8 +233,8 @@ function saveOrder() {
     return;
   }
 
-  const gbpBuy = parseFloat(gbpBuyInput.value) || 0;
-  const gbpSell = parseFloat(gbpSellInput.value) || 0;
+  const gbpBuy = parseFloat(gbpBuyInput ? gbpBuyInput.value : 0) || 0;
+  const gbpSell = parseFloat(gbpSellInput ? gbpSellInput.value : 0) || 0;
 
   const cost = gbpBuy * exchangeRate;
   const sell = gbpSell * exchangeRate;
